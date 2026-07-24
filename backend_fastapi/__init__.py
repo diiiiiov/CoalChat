@@ -1,0 +1,1 @@
+"""CoalChat FastAPI knowledge service."""

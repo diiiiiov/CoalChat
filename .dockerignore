@@ -1,0 +1,8 @@
+.git
+.venv
+node_modules
+dist
+knowledge_base
+backen
+*.log
+.env

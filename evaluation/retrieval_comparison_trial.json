@@ -1,0 +1,800 @@
+{
+  "dataset": "evaluation\\coal_mine_qa_trial.jsonl",
+  "benchmark_type": "synthetic_query_from_corpus",
+  "knowledge_base": "samples",
+  "index_chunks": 1526,
+  "candidate_k": 20,
+  "relevance_definition": "target chunk plus adjacent chunks from the same source",
+  "latency_note": "batch throughput amortized per query; excludes model/index loading and is not online P95",
+  "reranker_load_seconds": 2.959,
+  "methods": {
+    "dense_bge_faiss": {
+      "metrics": {
+        "samples": 12,
+        "recall@1": 0.3333,
+        "recall@3": 0.5833,
+        "recall@5": 0.5833,
+        "mrr@20": 0.4925,
+        "ndcg@5": 0.2651,
+        "exact_target_recall@5": 0.5,
+        "source_recall@1": 0.4167,
+        "source_recall@5": 0.75,
+        "source_mrr@20": 0.5863,
+        "batch_amortized_latency_ms_per_query": 290.51
+      },
+      "details": [
+        {
+          "id": "q0001",
+          "question": "在试采期间，为了研究老空水的构成，应该对工作面涌水开展哪些定期分析工作？",
+          "target_chunk_id": 60,
+          "rank": 2,
+          "exact_target_rank": 2,
+          "source_rank": 2,
+          "top5_chunk_ids": [
+            537,
+            60,
+            363,
+            165,
+            362
+          ]
+        },
+        {
+          "id": "q0002",
+          "question": "8号煤与9号煤的层间距变化对煤层厚度有什么影响？",
+          "target_chunk_id": 241,
+          "rank": null,
+          "exact_target_rank": null,
+          "source_rank": null,
+          "top5_chunk_ids": [
+            487,
+            438,
+            88,
+            526,
+            326
+          ]
+        },
+        {
+          "id": "q0003",
+          "question": "2021年葛泉矿东井在1295工作面底板奥灰注浆加固工程中，共完成了多少个钻孔？",
+          "target_chunk_id": 310,
+          "rank": 10,
+          "exact_target_rank": 10,
+          "source_rank": 7,
+          "top5_chunk_ids": [
+            411,
+            581,
+            853,
+            716,
+            577
+          ]
+        },
+        {
+          "id": "q0004",
+          "question": "井下临时抽采瓦斯泵站应该安设在什么位置？",
+          "target_chunk_id": 1132,
+          "rank": 2,
+          "exact_target_rank": 2,
+          "source_rank": 2,
+          "top5_chunk_ids": [
+            534,
+            1132,
+            635,
+            530,
+            532
+          ]
+        },
+        {
+          "id": "q0005",
+          "question": "在测井曲线中，如何利用自然伽玛和电阻率特征来区分本溪组铝土泥岩和奥陶系石灰岩？",
+          "target_chunk_id": 442,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            442,
+            445,
+            443,
+            446,
+            441
+          ]
+        },
+        {
+          "id": "q0006",
+          "question": "9号煤层煤灰的软化温度T2一般在什么范围？",
+          "target_chunk_id": 620,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            620,
+            528,
+            487,
+            488,
+            485
+          ]
+        },
+        {
+          "id": "q0007",
+          "question": "葛泉矿东井井田范围内有没有发现岩浆岩？",
+          "target_chunk_id": 745,
+          "rank": null,
+          "exact_target_rank": null,
+          "source_rank": 2,
+          "top5_chunk_ids": [
+            819,
+            702,
+            235,
+            810,
+            386
+          ]
+        },
+        {
+          "id": "q0008",
+          "question": "根据普查成果，葛泉矿东井范围内的大、中型断层主要沿什么构造的走向发育？",
+          "target_chunk_id": 901,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            901,
+            736,
+            737,
+            894,
+            896
+          ]
+        },
+        {
+          "id": "q0009",
+          "question": "当同一井田内煤层较多且水文地质条件变化较大时，应该如何进行矿井水文地质类型划分？",
+          "target_chunk_id": 171,
+          "rank": 7,
+          "exact_target_rank": 9,
+          "source_rank": 7,
+          "top5_chunk_ids": [
+            687,
+            540,
+            547,
+            698,
+            534
+          ]
+        },
+        {
+          "id": "q0010",
+          "question": "防治水工作应遵循的“十六字”原则是什么？",
+          "target_chunk_id": 265,
+          "rank": 6,
+          "exact_target_rank": null,
+          "source_rank": 4,
+          "top5_chunk_ids": [
+            287,
+            539,
+            968,
+            233,
+            288
+          ]
+        },
+        {
+          "id": "q0011",
+          "question": "在葛泉矿东井，哪些区域或设施需要留设防隔水煤岩柱？",
+          "target_chunk_id": 353,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            353,
+            336,
+            288,
+            154,
+            235
+          ]
+        },
+        {
+          "id": "q0012",
+          "question": "露天煤矿的爆破作业在什么天气条件下严禁进行？",
+          "target_chunk_id": 1394,
+          "rank": 2,
+          "exact_target_rank": null,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            1386,
+            1395,
+            1385,
+            1384,
+            984
+          ]
+        }
+      ]
+    },
+    "sparse_bm25": {
+      "metrics": {
+        "samples": 12,
+        "recall@1": 0.6667,
+        "recall@3": 0.75,
+        "recall@5": 0.9167,
+        "mrr@20": 0.75,
+        "ndcg@5": 0.527,
+        "exact_target_recall@5": 0.9167,
+        "source_recall@1": 0.75,
+        "source_recall@5": 1.0,
+        "source_mrr@20": 0.8194,
+        "batch_amortized_latency_ms_per_query": 37.54
+      },
+      "details": [
+        {
+          "id": "q0001",
+          "question": "在试采期间，为了研究老空水的构成，应该对工作面涌水开展哪些定期分析工作？",
+          "target_chunk_id": 60,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            60,
+            363,
+            165,
+            59,
+            362
+          ]
+        },
+        {
+          "id": "q0002",
+          "question": "8号煤与9号煤的层间距变化对煤层厚度有什么影响？",
+          "target_chunk_id": 241,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            241,
+            609,
+            326,
+            88,
+            733
+          ]
+        },
+        {
+          "id": "q0003",
+          "question": "2021年葛泉矿东井在1295工作面底板奥灰注浆加固工程中，共完成了多少个钻孔？",
+          "target_chunk_id": 310,
+          "rank": 3,
+          "exact_target_rank": 3,
+          "source_rank": 3,
+          "top5_chunk_ids": [
+            49,
+            852,
+            310,
+            580,
+            410
+          ]
+        },
+        {
+          "id": "q0004",
+          "question": "井下临时抽采瓦斯泵站应该安设在什么位置？",
+          "target_chunk_id": 1132,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            1132,
+            1133,
+            1375,
+            1130,
+            1376
+          ]
+        },
+        {
+          "id": "q0005",
+          "question": "在测井曲线中，如何利用自然伽玛和电阻率特征来区分本溪组铝土泥岩和奥陶系石灰岩？",
+          "target_chunk_id": 442,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            442,
+            446,
+            445,
+            441,
+            437
+          ]
+        },
+        {
+          "id": "q0006",
+          "question": "9号煤层煤灰的软化温度T2一般在什么范围？",
+          "target_chunk_id": 620,
+          "rank": 1,
+          "exact_target_rank": 4,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            619,
+            98,
+            610,
+            620,
+            101
+          ]
+        },
+        {
+          "id": "q0007",
+          "question": "葛泉矿东井井田范围内有没有发现岩浆岩？",
+          "target_chunk_id": 745,
+          "rank": 4,
+          "exact_target_rank": 4,
+          "source_rank": 4,
+          "top5_chunk_ids": [
+            819,
+            320,
+            83,
+            745,
+            601
+          ]
+        },
+        {
+          "id": "q0008",
+          "question": "根据普查成果，葛泉矿东井范围内的大、中型断层主要沿什么构造的走向发育？",
+          "target_chunk_id": 901,
+          "rank": 4,
+          "exact_target_rank": 4,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            896,
+            460,
+            594,
+            901,
+            683
+          ]
+        },
+        {
+          "id": "q0009",
+          "question": "当同一井田内煤层较多且水文地质条件变化较大时，应该如何进行矿井水文地质类型划分？",
+          "target_chunk_id": 171,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            171,
+            170,
+            786,
+            172,
+            551
+          ]
+        },
+        {
+          "id": "q0010",
+          "question": "防治水工作应遵循的“十六字”原则是什么？",
+          "target_chunk_id": 265,
+          "rank": 6,
+          "exact_target_rank": 8,
+          "source_rank": 4,
+          "top5_chunk_ids": [
+            345,
+            177,
+            792,
+            263,
+            678
+          ]
+        },
+        {
+          "id": "q0011",
+          "question": "在葛泉矿东井，哪些区域或设施需要留设防隔水煤岩柱？",
+          "target_chunk_id": 353,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            353,
+            288,
+            354,
+            1202,
+            1204
+          ]
+        },
+        {
+          "id": "q0012",
+          "question": "露天煤矿的爆破作业在什么天气条件下严禁进行？",
+          "target_chunk_id": 1394,
+          "rank": 1,
+          "exact_target_rank": 2,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            1395,
+            1394,
+            1388,
+            1386,
+            1422
+          ]
+        }
+      ]
+    },
+    "hybrid_rrf": {
+      "metrics": {
+        "samples": 12,
+        "recall@1": 0.75,
+        "recall@3": 0.75,
+        "recall@5": 0.75,
+        "mrr@20": 0.787,
+        "ndcg@5": 0.5044,
+        "exact_target_recall@5": 0.5833,
+        "source_recall@1": 0.75,
+        "source_recall@5": 0.75,
+        "source_mrr@20": 0.7917,
+        "batch_amortized_latency_ms_per_query": 328.06
+      },
+      "details": [
+        {
+          "id": "q0001",
+          "question": "在试采期间，为了研究老空水的构成，应该对工作面涌水开展哪些定期分析工作？",
+          "target_chunk_id": 60,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            60,
+            363,
+            165,
+            362,
+            59
+          ]
+        },
+        {
+          "id": "q0002",
+          "question": "8号煤与9号煤的层间距变化对煤层厚度有什么影响？",
+          "target_chunk_id": 241,
+          "rank": 6,
+          "exact_target_rank": 6,
+          "source_rank": 6,
+          "top5_chunk_ids": [
+            88,
+            326,
+            609,
+            89,
+            487
+          ]
+        },
+        {
+          "id": "q0003",
+          "question": "2021年葛泉矿东井在1295工作面底板奥灰注浆加固工程中，共完成了多少个钻孔？",
+          "target_chunk_id": 310,
+          "rank": 6,
+          "exact_target_rank": 6,
+          "source_rank": 6,
+          "top5_chunk_ids": [
+            411,
+            581,
+            49,
+            853,
+            852
+          ]
+        },
+        {
+          "id": "q0004",
+          "question": "井下临时抽采瓦斯泵站应该安设在什么位置？",
+          "target_chunk_id": 1132,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            1132,
+            1133,
+            1130,
+            1131,
+            534
+          ]
+        },
+        {
+          "id": "q0005",
+          "question": "在测井曲线中，如何利用自然伽玛和电阻率特征来区分本溪组铝土泥岩和奥陶系石灰岩？",
+          "target_chunk_id": 442,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            442,
+            445,
+            446,
+            441,
+            443
+          ]
+        },
+        {
+          "id": "q0006",
+          "question": "9号煤层煤灰的软化温度T2一般在什么范围？",
+          "target_chunk_id": 620,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            620,
+            98,
+            619,
+            101,
+            481
+          ]
+        },
+        {
+          "id": "q0007",
+          "question": "葛泉矿东井井田范围内有没有发现岩浆岩？",
+          "target_chunk_id": 745,
+          "rank": 9,
+          "exact_target_rank": 9,
+          "source_rank": 6,
+          "top5_chunk_ids": [
+            819,
+            83,
+            956,
+            320,
+            604
+          ]
+        },
+        {
+          "id": "q0008",
+          "question": "根据普查成果，葛泉矿东井范围内的大、中型断层主要沿什么构造的走向发育？",
+          "target_chunk_id": 901,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            901,
+            896,
+            683,
+            593,
+            736
+          ]
+        },
+        {
+          "id": "q0009",
+          "question": "当同一井田内煤层较多且水文地质条件变化较大时，应该如何进行矿井水文地质类型划分？",
+          "target_chunk_id": 171,
+          "rank": 1,
+          "exact_target_rank": 2,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            170,
+            171,
+            583,
+            679,
+            687
+          ]
+        },
+        {
+          "id": "q0010",
+          "question": "防治水工作应遵循的“十六字”原则是什么？",
+          "target_chunk_id": 265,
+          "rank": 1,
+          "exact_target_rank": 16,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            264,
+            263,
+            1195,
+            287,
+            345
+          ]
+        },
+        {
+          "id": "q0011",
+          "question": "在葛泉矿东井，哪些区域或设施需要留设防隔水煤岩柱？",
+          "target_chunk_id": 353,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            353,
+            288,
+            354,
+            336,
+            154
+          ]
+        },
+        {
+          "id": "q0012",
+          "question": "露天煤矿的爆破作业在什么天气条件下严禁进行？",
+          "target_chunk_id": 1394,
+          "rank": 1,
+          "exact_target_rank": 8,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            1395,
+            1386,
+            1384,
+            1385,
+            1388
+          ]
+        }
+      ]
+    },
+    "hybrid_rrf_bge_reranker": {
+      "metrics": {
+        "samples": 12,
+        "recall@1": 0.5833,
+        "recall@3": 0.8333,
+        "recall@5": 1.0,
+        "mrr@20": 0.75,
+        "ndcg@5": 0.5691,
+        "exact_target_recall@5": 1.0,
+        "source_recall@1": 0.75,
+        "source_recall@5": 1.0,
+        "source_mrr@20": 0.8333,
+        "batch_amortized_latency_ms_per_query": 6976.4
+      },
+      "details": [
+        {
+          "id": "q0001",
+          "question": "在试采期间，为了研究老空水的构成，应该对工作面涌水开展哪些定期分析工作？",
+          "target_chunk_id": 60,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            60,
+            165,
+            363,
+            362,
+            59
+          ]
+        },
+        {
+          "id": "q0002",
+          "question": "8号煤与9号煤的层间距变化对煤层厚度有什么影响？",
+          "target_chunk_id": 241,
+          "rank": 2,
+          "exact_target_rank": 2,
+          "source_rank": 2,
+          "top5_chunk_ids": [
+            326,
+            241,
+            88,
+            609,
+            733
+          ]
+        },
+        {
+          "id": "q0003",
+          "question": "2021年葛泉矿东井在1295工作面底板奥灰注浆加固工程中，共完成了多少个钻孔？",
+          "target_chunk_id": 310,
+          "rank": 4,
+          "exact_target_rank": 4,
+          "source_rank": 4,
+          "top5_chunk_ids": [
+            410,
+            49,
+            852,
+            310,
+            580
+          ]
+        },
+        {
+          "id": "q0004",
+          "question": "井下临时抽采瓦斯泵站应该安设在什么位置？",
+          "target_chunk_id": 1132,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            1132,
+            1133,
+            1375,
+            1376,
+            1048
+          ]
+        },
+        {
+          "id": "q0005",
+          "question": "在测井曲线中，如何利用自然伽玛和电阻率特征来区分本溪组铝土泥岩和奥陶系石灰岩？",
+          "target_chunk_id": 442,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            442,
+            445,
+            446,
+            444,
+            443
+          ]
+        },
+        {
+          "id": "q0006",
+          "question": "9号煤层煤灰的软化温度T2一般在什么范围？",
+          "target_chunk_id": 620,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            620,
+            619,
+            98,
+            485,
+            482
+          ]
+        },
+        {
+          "id": "q0007",
+          "question": "葛泉矿东井井田范围内有没有发现岩浆岩？",
+          "target_chunk_id": 745,
+          "rank": 4,
+          "exact_target_rank": 4,
+          "source_rank": 4,
+          "top5_chunk_ids": [
+            602,
+            83,
+            956,
+            745,
+            604
+          ]
+        },
+        {
+          "id": "q0008",
+          "question": "根据普查成果，葛泉矿东井范围内的大、中型断层主要沿什么构造的走向发育？",
+          "target_chunk_id": 901,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            901,
+            593,
+            896,
+            683,
+            460
+          ]
+        },
+        {
+          "id": "q0009",
+          "question": "当同一井田内煤层较多且水文地质条件变化较大时，应该如何进行矿井水文地质类型划分？",
+          "target_chunk_id": 171,
+          "rank": 1,
+          "exact_target_rank": 1,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            171,
+            172,
+            170,
+            786,
+            698
+          ]
+        },
+        {
+          "id": "q0010",
+          "question": "防治水工作应遵循的“十六字”原则是什么？",
+          "target_chunk_id": 265,
+          "rank": 2,
+          "exact_target_rank": 2,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            263,
+            265,
+            264,
+            1195,
+            345
+          ]
+        },
+        {
+          "id": "q0011",
+          "question": "在葛泉矿东井，哪些区域或设施需要留设防隔水煤岩柱？",
+          "target_chunk_id": 353,
+          "rank": 1,
+          "exact_target_rank": 2,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            354,
+            353,
+            200,
+            288,
+            1202
+          ]
+        },
+        {
+          "id": "q0012",
+          "question": "露天煤矿的爆破作业在什么天气条件下严禁进行？",
+          "target_chunk_id": 1394,
+          "rank": 2,
+          "exact_target_rank": 3,
+          "source_rank": 1,
+          "top5_chunk_ids": [
+            1386,
+            1395,
+            1394,
+            1396,
+            1385
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,38 @@
+services:
+  knowledge-api:
+    build: .
+    env_file:
+      - ./backen/.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      EMBED_MODEL_PATH: /app/knowledge_base/samples/vector_store/bge-large-zh
+      RERANKER_MODEL_PATH: /app/backen/knowledge/bge-reranker-base
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./knowledge_base:/app/knowledge_base:ro
+      - ./backen/knowledge/bge-reranker-base:/app/backen/knowledge/bge-reranker-base:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  redis-data:

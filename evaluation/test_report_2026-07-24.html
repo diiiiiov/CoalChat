@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoalChat 测试报告 — 2026-07-24</title>
+<style>
+  :root {
+    --pass: #22c55e; --fail: #ef4444; --warn: #f59e0b; --info: #3b82f6;
+    --bg: #f8fafc; --card: #fff; --text: #1e293b; --muted: #94a3b8; --border: #e2e8f0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+  .header { text-align: center; margin-bottom: 40px; }
+  .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+  .header .sub { color: var(--muted); font-size: 14px; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 36px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; text-align: center; }
+  .stat-card .num { font-size: 32px; font-weight: 700; }
+  .stat-card .label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .stat-card.pass .num { color: var(--pass); }
+  .stat-card.warn .num { color: var(--warn); }
+  .section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+  .section h2 { font-size: 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .badge.pass { background: #dcfce7; color: #166534; }
+  .badge.fail { background: #fef2f2; color: #991b1b; }
+  .badge.skip { background: #fef3c7; color: #92400e; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; }
+  .test-name { font-weight: 600; font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; }
+  .duration { color: var(--muted); font-size: 13px; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 8px; padding: 10px 14px; background: #f1f5f9; border-radius: 8px; }
+  .bar-wrap { background: #f1f5f9; border-radius: 4px; height: 8px; margin-top: 12px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+  .bar-fill.green { background: var(--pass); }
+  .bar-fill.amber { background: var(--warn); }
+  .bar-fill.red { background: var(--fail); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  ul { padding-left: 20px; font-size: 14px; }
+  li { margin-bottom: 6px; }
+  code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>CoalChat 测试报告</h1>
+  <p class="sub">2026-07-24 · Python 3.12.13 · pytest 9.1.1 · Windows</p>
+</div>
+
+<div class="summary">
+  <div class="stat-card pass"><div class="num">5</div><div class="label">通过</div></div>
+  <div class="stat-card"><div class="num">0</div><div class="label">失败</div></div>
+  <div class="stat-card warn"><div class="num">2</div><div class="label">未执行</div></div>
+  <div class="stat-card"><div class="num">13.0s</div><div class="label">总耗时</div></div>
+</div>
+
+<div class="section">
+  <h2>单元测试 <span class="badge pass">5/5 通过</span></h2>
+  <table>
+    <thead><tr><th>测试</th><th>模块</th><th>结果</th><th>耗时</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="test-name">test_normalizes_and_removes_invalid_citations</td>
+        <td>text_utils</td>
+        <td><span class="badge pass">PASS</span></td>
+        <td class="duration">—</td>
+      </tr>
+      <tr>
+        <td class="test-name">test_text_splitter_keeps_overlap</td>
+        <td>index_tools</td>
+        <td><span class="badge pass">PASS</span></td>
+        <td class="duration">—</td>
+      </tr>
+      <tr>
+        <td class="test-name">test_chat_payload</td>
+        <td>model_client</td>
+        <td><span class="badge pass">PASS</span></td>
+        <td class="duration">—</td>
+      </tr>
+      <tr>
+        <td class="test-name">test_extracts_completion_and_chat_tokens</td>
+        <td>model_client</td>
+        <td><span class="badge pass">PASS</span></td>
+        <td class="duration">—</td>
+      </tr>
+      <tr>
+        <td class="test-name">test_memory_evidence_and_retrieval_cache</td>
+        <td>storage</td>
+        <td><span class="badge pass">PASS</span></td>
+        <td class="duration">—</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>集成 / 冒烟测试 <span class="badge skip">未执行</span></h2>
+  <p>以下测试需要启动 FastAPI 服务 + Mock LLM 服务器，本次未在运行环境中启动。</p>
+  <table>
+    <thead><tr><th>测试文件</th><th>覆盖范围</th><th>前置条件</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="test-name">smoke_test.py</td>
+        <td>SSE 流式对话、引用规范化、证据回查、检索缓存、普通问答</td>
+        <td>FastAPI 服务运行在 :18000，Mock LLM 可用</td>
+      </tr>
+      <tr>
+        <td class="test-name">real_api_smoke.py</td>
+        <td>真实模型 API 流式回答、引用、证据回查</td>
+        <td>FastAPI 服务 + 真实 LLM API 配置</td>
+      </tr>
+      <tr>
+        <td class="test-name">redis_persistence_test.py</td>
+        <td>Redis 证据持久化跨进程读写</td>
+        <td>Redis 服务可用</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="note">💡 执行命令: <code>npm run test:backend</code>（会启动 mock LLM + FastAPI 后自动运行 smoke_test.py）</div>
+</div>
+
+<div class="section">
+  <h2>检索评测 <span class="badge skip">未执行</span></h2>
+  <p>评测脚本因系统页面文件不足无法加载 BGE-large-zh 模型（~1.3GB），本次跳过。</p>
+  <table>
+    <thead><tr><th>指标</th><th>说明</th><th>数据集</th></tr></thead>
+    <tbody>
+      <tr><td>Recall@5</td><td>前 5 个结果中命中相关文档的召回率</td><td rowspan="3">retrieval_eval.jsonl (2 条)</td></tr>
+      <tr><td>MRR</td><td>第一个相关文档排名的倒数平均</td></tr>
+      <tr><td>平均延迟</td><td>单次检索平均耗时（秒）</td></tr>
+    </tbody>
+  </table>
+  <div class="note">💡 执行命令: <code>npm run eval:retrieval</code></div>
+</div>
+
+<div class="grid-2">
+  <div class="section">
+    <h2>测试覆盖分布</h2>
+    <table>
+      <thead><tr><th>模块</th><th>测试数</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>text_utils (引用规范化)</td><td>1</td><td><span class="badge pass">PASS</span></td></tr>
+        <tr><td>index_tools (文本切分)</td><td>1</td><td><span class="badge pass">PASS</span></td></tr>
+        <tr><td>model_client (LLM 协议)</td><td>2</td><td><span class="badge pass">PASS</span></td></tr>
+        <tr><td>storage (内存存储)</td><td>1</td><td><span class="badge pass">PASS</span></td></tr>
+        <tr><td>retrieval (混合检索)</td><td>0</td><td><span class="badge skip">需服务</span></td></tr>
+        <tr><td>API 端点 (SSE/REST)</td><td>0</td><td><span class="badge skip">需服务</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="section">
+    <h2>环境信息</h2>
+    <ul>
+      <li><strong>Python:</strong> 3.12.13 (venv)</li>
+      <li><strong>pytest:</strong> 9.1.1</li>
+      <li><strong>httpx:</strong> 0.28.1</li>
+      <li><strong>OS:</strong> Windows (Git Bash)</li>
+      <li><strong>知识库:</strong> samples (8 份文档, BGE-large-zh 向量索引)</li>
+      <li><strong>存储后端:</strong> 内存（Redis 未连接）</li>
+    </ul>
+  </div>
+</div>
+
+<div class="section">
+  <h2>建议</h2>
+  <ul>
+    <li>在 Linux / Docker 环境中重新运行 <code>npm run eval:retrieval</code> 获取 Recall@5 和 MRR 指标</li>
+    <li>启动完整测试链: <code>npm run test:backend</code> 验证 SSE 流式、引用、缓存命中</li>
+    <li>连接 Redis 后运行 <code>redis_persistence_test.py</code> 验证跨进程证据持久化</li>
+    <li>建议增加 retrieval 模块的单元测试（对 FAISS/BM25 关键路径 mock）</li>
+    <li>建议在 CI 中加入 <code>pytest --junitxml=report.xml</code> 自动生成结构化报告</li>
+  </ul>
+</div>
+
+</div>
+</body>
+</html>
