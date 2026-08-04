@@ -87,6 +87,12 @@ class ModelClient:
     async def complete(
         self, prompt: str, model: str | None, temperature: float
     ) -> str:
+        answer, _ = await self.complete_with_usage(prompt, model, temperature)
+        return answer
+
+    async def complete_with_usage(
+        self, prompt: str, model: str | None, temperature: float
+    ) -> tuple[str, dict[str, Any]]:
         payload = self.build_payload(prompt, model, temperature, False)
         last_error: Exception | None = None
         for attempt in range(self.config.max_retries + 1):
@@ -98,7 +104,9 @@ class ModelClient:
                         headers=self._headers(),
                     )
                     response.raise_for_status()
-                    return self.extract_token(response.json())
+                    response_payload = response.json()
+                    usage = response_payload.get("usage") or {}
+                    return self.extract_token(response_payload), usage
             except Exception as exc:
                 last_error = exc
                 if attempt >= self.config.max_retries or not self._retryable(exc):

@@ -1,9 +1,12 @@
 import argparse
-import glob
+import hashlib
 import io
 import os
 import pickle
+import re
+import shutil
 import sys
+import time
 from pathlib import Path
 
 import faiss
@@ -16,17 +19,20 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parents[2]
 sys.path.append(str(SCRIPT_DIR.parent))
+sys.path.append(str(PROJECT_ROOT))
 
-from document_loaders import (  # noqa: E402
-    FilteredCSVloader,
-    RapidOCRDocLoader,
-    RapidOCRPDFLoader,
-    RapidOCRPPTLoader,
-)
-from text_splitter import ChineseRecursiveTextSplitter  # noqa: E402
+try:
+    from text_splitter import ChineseRecursiveTextSplitter  # noqa: E402
+except ImportError:
+    ChineseRecursiveTextSplitter = None
+    from backend_fastapi.index_tools import split_text as _fallback_split_text
+
+from backend_fastapi.document_blocks import parse_document, persist_blocks
 
 
 def split_text(text: str, chunk_size: int = 300, overlap: int = 50) -> list[str]:
+    if ChineseRecursiveTextSplitter is None:
+        return _fallback_split_text(text, chunk_size, overlap)
     splitter = ChineseRecursiveTextSplitter(
         keep_separator=True,
         is_separator_regex=True,
@@ -36,60 +42,88 @@ def split_text(text: str, chunk_size: int = 300, overlap: int = 50) -> list[str]
     return splitter.split_text(text)
 
 
-def _load_file(file_path: str) -> str:
-    extension = Path(file_path).suffix.lower()
-    if extension == ".txt":
-        return Path(file_path).read_text(encoding="utf-8", errors="ignore")
-    if extension == ".docx":
-        documents = RapidOCRDocLoader(file_path=file_path).load()
-        return "\n".join(document.page_content for document in documents)
-    if extension == ".pdf":
-        documents = RapidOCRPDFLoader(file_path=file_path).load()
-        return "\n".join(document.page_content for document in documents)
-    if extension == ".pptx":
-        documents = RapidOCRPPTLoader(file_path=file_path).load()
-        return "\n".join(document.page_content for document in documents)
-    if extension == ".csv":
-        try:
-            documents = FilteredCSVloader(
-                file_path=file_path,
-                columns_to_read=["content"],
-                source_column="source",
-            ).load()
-            return "\n".join(document.page_content for document in documents)
-        except Exception:
-            import pandas as pd
+def _content_hash(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
-            return pd.read_csv(file_path, encoding="utf-8").to_string(index=False)
-    return ""
+
+def _section_title(chunk: str) -> str | None:
+    first_line = next((line.strip() for line in chunk.splitlines() if line.strip()), "")
+    if len(first_line) <= 80 and (
+        first_line.startswith("#")
+        or re.match(r"^第[一二三四五六七八九十百千万\d]+[章节条]", first_line)
+    ):
+        return first_line.lstrip("# ")
+    return None
 
 
 def read_all_texts(
     input_dir: str, chunk_size: int = 300, overlap: int = 50
 ) -> tuple[list[str], list[dict]]:
-    files: list[str] = []
-    for extension in ("*.txt", "*.docx", "*.pdf", "*.pptx", "*.csv"):
-        files.extend(glob.glob(os.path.join(input_dir, extension)))
+    allowed_extensions = {".txt", ".md", ".docx", ".pdf", ".pptx", ".csv"}
+    files = [
+        str(path)
+        for path in sorted(Path(input_dir).iterdir())
+        if path.is_file() and path.suffix.lower() in allowed_extensions
+    ]
 
     documents: list[str] = []
     metadatas: list[dict] = []
+    parse_errors: list[str] = []
+    parsed_dir = Path(input_dir).parent / "parsed"
     for file_path in tqdm.tqdm(files, desc="处理文件"):
         try:
-            text = _load_file(file_path)
+            document_hash, blocks = parse_document(
+                Path(file_path), parsed_dir / "assets"
+            )
+            document_id = document_hash[:24]
+            persist_blocks(parsed_dir, document_id, blocks)
         except Exception as exc:
-            print(f"[文件解析失败] {file_path}: {exc}", file=sys.stderr)
+            message = f"[文件解析失败] {file_path}: {exc}"
+            parse_errors.append(message)
+            print(message, file=sys.stderr)
             continue
-        if not text.strip():
-            continue
-        for chunk_index, chunk in enumerate(split_text(text, chunk_size, overlap)):
-            documents.append(chunk)
-            metadatas.append(
+        file_rows: list[tuple[str, dict]] = []
+        for block in blocks:
+            if block.block_type == "page_image" or (
+                block.block_type == "image"
+                and block.metadata.get("vision_status") != "completed"
+            ):
+                continue
+            for chunk in split_text(block.content, chunk_size, overlap):
+                file_rows.append(
+                    (
+                        chunk,
+                        {
+                            "file": os.path.basename(file_path),
+                            "content": chunk,
+                            "document_id": document_id,
+                            "document_hash": document_hash,
+                            "block_id": block.block_id,
+                            "block_type": block.block_type,
+                            "page": block.page,
+                            "bbox": block.bbox,
+                            "section_title": block.section_title or _section_title(chunk),
+                            "content_hash": _content_hash(chunk),
+                            "evidence_locator": {
+                                "page": block.page,
+                                "bbox": block.bbox,
+                                "block_id": block.block_id,
+                            },
+                        },
+                    )
+                )
+        for chunk_index, (chunk, metadata) in enumerate(file_rows):
+            metadata.update(
                 {
-                    "file": os.path.basename(file_path),
-                    "content": chunk,
-                    "chunk_id": chunk_index,
+                    "document_chunk_id": chunk_index,
+                    "previous_chunk_id": chunk_index - 1 if chunk_index > 0 else None,
+                    "next_chunk_id": chunk_index + 1 if chunk_index + 1 < len(file_rows) else None,
                 }
             )
+            documents.append(chunk)
+            metadatas.append(metadata)
+    if parse_errors:
+        raise RuntimeError("\n".join(parse_errors))
     return documents, metadatas
 
 
@@ -131,9 +165,20 @@ def main() -> None:
     # 归一化向量使用内积等价于余弦相似度。
     index = faiss.IndexFlatIP(embeddings.shape[1])
     index.add(np.ascontiguousarray(embeddings))
-    faiss.write_index(index, str(output_dir / "index.faiss"))
-    with (output_dir / "index.pkl").open("wb") as file:
+    index_path = output_dir / "index.faiss"
+    metadata_path = output_dir / "index.pkl"
+    temp_index = output_dir / "index.faiss.tmp"
+    temp_metadata = output_dir / "index.pkl.tmp"
+    timestamp = time.strftime("%Y%m%d%H%M%S")
+    if index_path.exists():
+        shutil.copy2(index_path, output_dir / f"index.faiss.bak-{timestamp}")
+    if metadata_path.exists():
+        shutil.copy2(metadata_path, output_dir / f"index.pkl.bak-{timestamp}")
+    faiss.write_index(index, str(temp_index))
+    with temp_metadata.open("wb") as file:
         pickle.dump(metadatas, file)
+    os.replace(temp_index, index_path)
+    os.replace(temp_metadata, metadata_path)
     print(f"向量库已保存到 {output_dir}")
 
 

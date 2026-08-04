@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import pickle
@@ -115,11 +116,18 @@ def add_text_file(
     index.add(np.ascontiguousarray(embeddings))
 
     start_chunk_id = len(metadata)
+    document_hash = hashlib.sha256(source_path.read_bytes()).hexdigest()
     metadata.extend(
         {
             "file": filename,
             "content": chunk,
             "chunk_id": start_chunk_id + position,
+            "document_id": document_hash[:24],
+            "document_hash": document_hash,
+            "document_chunk_id": position,
+            "previous_chunk_id": position - 1 if position > 0 else None,
+            "next_chunk_id": position + 1 if position + 1 < len(chunks) else None,
+            "content_hash": hashlib.sha256(chunk.encode("utf-8")).hexdigest(),
         }
         for position, chunk in enumerate(chunks)
     )
@@ -138,6 +146,15 @@ def add_text_file(
     shutil.copy2(metadata_path, backup_metadata)
     os.replace(temp_index, index_path)
     os.replace(temp_metadata, metadata_path)
+    # If indexing runs in-process with FastAPI, force the active reader to
+    # release its cached FAISS/BM25 objects. Version-keyed loading handles
+    # separate indexer processes, while this hook makes the local API explicit.
+    try:
+        from .retrieval import clear_index_cache
+
+        clear_index_cache()
+    except ImportError:
+        pass
 
     return {
         "status": "indexed",

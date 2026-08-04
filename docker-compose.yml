@@ -7,6 +7,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       EMBED_MODEL_PATH: /app/knowledge_base/samples/vector_store/bge-large-zh
       RERANKER_MODEL_PATH: /app/backen/knowledge/bge-reranker-base
+      RERANKER_MAX_LENGTH: 320
     ports:
       - "8000:8000"
     volumes:

@@ -351,18 +351,20 @@ async function sendMsg() {
         temperature: 0.2
       }
 
-      const answerMessage = { role: 'ai', text: '', sources: [], requestId: '' }
+      const answerMessage = { role: 'ai', text: '', sources: [], requestId: '', trace: null }
       session.messages.push(answerMessage)
       await streamKnowledgeAnswer(payload, (event, data) => {
         if (event === 'sources') {
           answerMessage.sources = data.sources || []
           answerMessage.requestId = data.request_id || ''
+          answerMessage.trace = data.trace || answerMessage.trace
         } else if (event === 'token') {
           answerMessage.text += data.text || ''
         } else if (event === 'done') {
           // 后端会在完成事件中校验并规范化引用编号。
           answerMessage.text = data.answer || answerMessage.text
           answerMessage.requestId = data.request_id || answerMessage.requestId
+          answerMessage.trace = data.trace || answerMessage.trace
         } else if (event === 'error') {
           throw new Error(data.message || '流式问答失败')
         }

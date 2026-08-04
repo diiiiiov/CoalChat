@@ -1,9 +1,12 @@
 import unittest
+from unittest.mock import patch
 
 from backend_fastapi.model_client import ModelClient, ModelClientConfig
 from backend_fastapi.index_tools import split_text
 from backend_fastapi.storage import StateStore
 from backend_fastapi.text_utils import normalize_citations
+from backend_fastapi.query_context import compact_history, should_rewrite
+from backend_fastapi.retrieval import analyze_query, should_use_reranker
 
 
 class CitationTests(unittest.TestCase):
@@ -58,6 +61,51 @@ class StorageTests(unittest.IsolatedAsyncioTestCase):
         documents = [{"content": "应急处置"}]
         await store.save_retrieval(cache_key, documents)
         self.assertEqual(await store.get_retrieval(cache_key), documents)
+
+
+class QueryContextTests(unittest.TestCase):
+    def test_removes_current_turn_duplicate_from_frontend_history(self):
+        history = compact_history(
+            [
+                {"role": "user", "content": "瓦斯浓度达到1%怎么办"},
+                {"role": "assistant", "content": "请检查通风"},
+                {"role": "user", "content": "那超过这个值以后呢"},
+            ],
+            "那超过这个值以后呢",
+        )
+        self.assertEqual(len(history), 2)
+        self.assertTrue(should_rewrite("那超过这个值以后呢", history))
+
+    def test_short_standalone_query_does_not_rewrite_without_history(self):
+        self.assertFalse(should_rewrite("怎么办", []))
+
+
+class RetrievalRoutingTests(unittest.TestCase):
+    def test_exact_numeric_query_uses_sparse_without_reranker(self):
+        strategy = analyze_query("瓦斯浓度达到1.5%时如何处理")
+        self.assertEqual(strategy.mode, "exact")
+        self.assertEqual(strategy.dense_weight, 0.0)
+        self.assertFalse(should_use_reranker(strategy))
+
+    def test_relational_query_keeps_dense_and_reranker(self):
+        strategy = analyze_query("瓦斯积聚为什么会导致爆炸")
+        self.assertEqual(strategy.mode, "relational")
+        self.assertGreater(strategy.dense_weight, strategy.sparse_weight)
+        self.assertTrue(should_use_reranker(strategy))
+
+    def test_reranker_policy_can_override_route(self):
+        strategy = analyze_query("煤矿安全规程第十二条是什么")
+        with patch.dict("os.environ", {"RERANKER_POLICY": "always"}):
+            self.assertTrue(should_use_reranker(strategy))
+
+    def test_agreeing_retrievers_skip_reranker_in_auto_mode(self):
+        strategy = analyze_query("瓦斯超限应该如何处理")
+        self.assertFalse(
+            should_use_reranker(strategy, dense=[1, 2, 3], sparse=[2, 1, 8])
+        )
+        self.assertTrue(
+            should_use_reranker(strategy, dense=[1, 2, 3], sparse=[8, 9, 10])
+        )
 
 
 if __name__ == "__main__":

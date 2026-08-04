@@ -106,7 +106,13 @@ def summarize(
     return metrics, details
 
 
-def evaluate(dataset: Path, knowledge_base: str, candidate_k: int) -> dict[str, Any]:
+def evaluate(
+    dataset: Path,
+    knowledge_base: str,
+    candidate_k: int,
+    reranker_candidate_k: int,
+    reranker_max_length: int | None,
+) -> dict[str, Any]:
     samples = [json.loads(line) for line in dataset.read_text(encoding="utf-8").splitlines() if line.strip()]
     if not samples:
         raise RuntimeError("评测集为空")
@@ -114,6 +120,7 @@ def evaluate(dataset: Path, knowledge_base: str, candidate_k: int) -> dict[str, 
     if any(sample["target_chunk_id"] >= len(store.metadatas) for sample in samples):
         raise RuntimeError("评测集与当前索引不匹配")
     candidate_k = min(candidate_k, len(store.metadatas))
+    reranker_candidate_k = min(reranker_candidate_k, candidate_k)
     questions = [sample["question"] for sample in samples]
 
     started = time.perf_counter()
@@ -146,18 +153,27 @@ def evaluate(dataset: Path, knowledge_base: str, candidate_k: int) -> dict[str, 
     reranker_load_elapsed = time.perf_counter() - reranker_load_started
     if reranker is None:
         raise RuntimeError("BGE Reranker 模型不可用")
+    if reranker_max_length is not None:
+        reranker.max_length = reranker_max_length
     pairs = [
         (question, store.metadatas[document_id]["content"])
         for question, ranking in zip(questions, hybrid_rankings)
-        for document_id in ranking
+        for document_id in ranking[:reranker_candidate_k]
     ]
     started = time.perf_counter()
     scores = np.asarray(
         reranker.predict(pairs, batch_size=32, show_progress_bar=True)
-    ).reshape(len(samples), candidate_k)
+    ).reshape(len(samples), reranker_candidate_k)
     rerank_elapsed = time.perf_counter() - started
     reranked_rankings = [
-        [document_id for document_id, _ in sorted(zip(ranking, row), key=lambda item: float(item[1]), reverse=True)]
+        [
+            document_id
+            for document_id, _ in sorted(
+                zip(ranking[:reranker_candidate_k], row),
+                key=lambda item: float(item[1]),
+                reverse=True,
+            )
+        ]
         for ranking, row in zip(hybrid_rankings, scores)
     ]
 
@@ -190,6 +206,8 @@ def evaluate(dataset: Path, knowledge_base: str, candidate_k: int) -> dict[str, 
         "knowledge_base": knowledge_base,
         "index_chunks": len(store.metadatas),
         "candidate_k": candidate_k,
+        "reranker_candidate_k": reranker_candidate_k,
+        "reranker_max_length": reranker.max_length,
         "relevance_definition": "target chunk plus adjacent chunks from the same source",
         "latency_note": "batch throughput amortized per query; excludes model/index loading and is not online P95",
         "reranker_load_seconds": round(reranker_load_elapsed, 3),
@@ -205,6 +223,8 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- 样本数：{next(iter(report['methods'].values()))['metrics']['samples']}",
         f"- 索引片段：{report['index_chunks']}",
         f"- 候选数：{report['candidate_k']}",
+        f"- Reranker 输入候选数：{report['reranker_candidate_k']}",
+        f"- Reranker 最大序列长度：{report['reranker_max_length'] or '模型默认值'}",
         "- 说明：问题由语料片段合成，指标用于工程回归，不等同于真实用户盲测。",
         "",
         "| 方法 | Recall@1 | Recall@3 | Recall@5 | MRR@20 | nDCG@5 | 精确目标R@5 | 平均延迟(ms) |",
@@ -225,9 +245,17 @@ def main() -> None:
     parser.add_argument("--dataset", type=Path, default=PROJECT_ROOT / "evaluation" / "coal_mine_qa_300.jsonl")
     parser.add_argument("--knowledge-base", default="samples")
     parser.add_argument("--candidate-k", type=int, default=20)
+    parser.add_argument("--reranker-candidate-k", type=int, default=10)
+    parser.add_argument("--reranker-max-length", type=int)
     parser.add_argument("--output", type=Path, default=PROJECT_ROOT / "evaluation" / "retrieval_comparison_report.json")
     args = parser.parse_args()
-    report = evaluate(args.dataset, args.knowledge_base, args.candidate_k)
+    report = evaluate(
+        args.dataset,
+        args.knowledge_base,
+        args.candidate_k,
+        args.reranker_candidate_k,
+        args.reranker_max_length,
+    )
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     markdown_path = args.output.with_suffix(".md")
     markdown_path.write_text(markdown_report(report), encoding="utf-8")

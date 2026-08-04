@@ -82,15 +82,15 @@ class StateStore:
         encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
         return f"coalchat:retrieval:{hashlib.sha256(encoded).hexdigest()}"
 
-    async def get_retrieval(self, key: str) -> list[dict[str, Any]] | None:
+    async def get_retrieval(self, key: str) -> Any | None:
         value = await self._redis_get(key)
         if value is None:
             value = self._memory_get(key)
         return value
 
-    async def save_retrieval(self, key: str, documents: list[dict[str, Any]]) -> None:
-        if not await self._redis_set(key, documents, self.cache_ttl):
-            self._memory_set(key, documents, self.cache_ttl)
+    async def save_retrieval(self, key: str, value: Any) -> None:
+        if not await self._redis_set(key, value, self.cache_ttl):
+            self._memory_set(key, value, self.cache_ttl)
 
     async def backend(self) -> str:
         if not self._redis:
