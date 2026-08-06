@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "pipeline_version": "weighted-routing-v2-exact-preserve",
+  "dataset": "coal_mine_qa_300.jsonl",
+  "slice": "exact",
+  "samples": 109,
+  "top_k": 5,
+  "reranker_candidate_k": 20,
+  "context_radius": 2,
+  "direct_hits_before_context_expansion": 97,
+  "direct_recall_at_5": 0.8899,
+  "confirmed_context_recoveries": ["q0010", "q0102"],
+  "covered_hits_lower_bound": 99,
+  "covered_recall_at_5_lower_bound": 0.9083,
+  "full_direct_run_elapsed_seconds": 591.3,
+  "validation_note": "The full run measured direct chunk hits. Exact context expansion only adds same-source neighboring evidence and cannot remove a direct hit; targeted reruns confirmed two additional covered targets, so 99/109 is a conservative lower bound."
+}

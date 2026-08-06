@@ -7,6 +7,7 @@ import re
 import sys
 import time
 import gc
+import threading
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -19,7 +20,13 @@ DEFAULT_EMBED_MODEL = (
 )
 DEFAULT_RERANKER = PROJECT_ROOT / "backen" / "knowledge" / "bge-reranker-base"
 DEFAULT_RERANKER_MAX_LENGTH = 320
-RETRIEVAL_PIPELINE_VERSION = "weighted-routing-v1"
+RETRIEVAL_PIPELINE_VERSION = "weighted-routing-v2-exact-preserve"
+_RETRIEVAL_GATE = threading.BoundedSemaphore(
+    max(1, int(os.getenv("RETRIEVAL_MAX_CONCURRENCY", "2")))
+)
+_RERANKER_GATE = threading.BoundedSemaphore(
+    max(1, int(os.getenv("RERANKER_MAX_CONCURRENCY", "1")))
+)
 
 
 @dataclass(frozen=True)
@@ -36,14 +43,23 @@ _STRONG_EXACT_RE = re.compile(
     r"[a-zA-Z]{1,8}[-_/]?\d{2,}[a-zA-Z0-9-]*)",
     re.IGNORECASE,
 )
+_EXACT_LOOKUP_RE = re.compile(
+    r"多少|数值|限值|比例|平均厚度|单位涌水量|渗透系数|矿化度|预计费用|生产能力|累计.{0,8}进尺"
+)
 _RELATIONAL_RE = re.compile(r"原因|导致|影响|关系|关联|为什么|为何|流程|步骤|先后|如何处置|怎么处理")
 _SUMMARY_RE = re.compile(r"总结|概述|总体|主要有哪些|全部|综合说明|整体")
 
 
+def is_exact_query(query: str) -> bool:
+    return bool(_STRONG_EXACT_RE.search(query) or _EXACT_LOOKUP_RE.search(query))
+
+
 def analyze_query(query: str) -> RetrievalStrategy:
     """Choose a low-cost retrieval route from stable, inspectable rules."""
-    if _STRONG_EXACT_RE.search(query):
-        return RetrievalStrategy("exact", dense_weight=0.0, sparse_weight=1.0, rerank=False)
+    if is_exact_query(query):
+        # BM25 remains dominant, while a small dense pool gives the reranker
+        # enough candidates to recover paraphrased exact lookups.
+        return RetrievalStrategy("exact", dense_weight=1.0, sparse_weight=1.0, rerank=True)
     if _SUMMARY_RE.search(query):
         return RetrievalStrategy("summary", dense_weight=1.2, sparse_weight=0.8, rerank=True)
     if _RELATIONAL_RE.search(query):
@@ -65,6 +81,8 @@ def should_use_reranker(
         return False
     if not strategy.rerank:
         return False
+    if strategy.mode == "exact":
+        return True
     if strategy.mode == "summary" or not dense or not sparse:
         return True
     # When both retrievers already agree on at least two of their top three
@@ -176,6 +194,19 @@ def clear_index_cache() -> None:
         cuda.empty_cache()
 
 
+def preload_retrieval_models(knowledge_base: str = "samples") -> dict[str, Any]:
+    """Load index and reranker before readiness to avoid first-user cold start."""
+    started = time.perf_counter()
+    store = load_index(knowledge_base)
+    reranker = load_reranker()
+    return {
+        "knowledge_base": knowledge_base,
+        "index_chunks": len(store.metadatas),
+        "reranker_available": reranker is not None,
+        "elapsed_ms": round((time.perf_counter() - started) * 1000, 2),
+    }
+
+
 @lru_cache(maxsize=1)
 def load_reranker() -> Any | None:
     model_path = Path(os.getenv("RERANKER_MODEL_PATH", str(DEFAULT_RERANKER)))
@@ -183,6 +214,11 @@ def load_reranker() -> Any | None:
         return None
     try:
         from sentence_transformers import CrossEncoder
+        import torch
+
+        default_threads = min(os.cpu_count() or 1, 12)
+        cpu_threads = max(1, int(os.getenv("RERANKER_CPU_THREADS", str(default_threads))))
+        torch.set_num_threads(cpu_threads)
 
         max_length = int(
             os.getenv("RERANKER_MAX_LENGTH", str(DEFAULT_RERANKER_MAX_LENGTH))
@@ -202,7 +238,7 @@ def _rank_map(indices: list[int]) -> dict[int, int]:
     return {document_index: rank for rank, document_index in enumerate(indices, 1)}
 
 
-def hybrid_search(
+def _hybrid_search_impl(
     query: str,
     knowledge_base: str,
     top_k: int = 5,
@@ -263,6 +299,7 @@ def hybrid_search(
         metadata = store.metadatas[document_id]
         candidates.append(
             {
+                "document_index": document_id,
                 "content": metadata["content"],
                 "source": metadata.get("file") or metadata.get("source") or "未知来源",
                 "chunk_id": metadata.get("chunk_id", document_id),
@@ -282,20 +319,46 @@ def hybrid_search(
         (time.perf_counter() - reranker_load_started) * 1000 if rerank_requested else 0.0
     )
     rerank_started = time.perf_counter()
+    exact_preserved = 0
     if reranker and candidates:
         # Keep the wider retrieval pool for recall, but only send the leading
         # candidates through the expensive cross-encoder. When callers request
         # more than 10 results, rerank enough candidates to honor top_k.
         configured_k = max(top_k, int(os.getenv("RERANKER_CANDIDATE_K", "10")))
+        if strategy.mode == "exact":
+            configured_k = max(
+                configured_k,
+                int(os.getenv("EXACT_RERANKER_CANDIDATE_K", "20")),
+            )
         reranker_input_k = min(len(candidates), configured_k)
         candidates = candidates[:reranker_input_k]
         pairs = [(query, item["content"]) for item in candidates]
-        raw_scores = np.asarray(reranker.predict(pairs)).reshape(-1)
+        reranker_queue_started = time.perf_counter()
+        with _RERANKER_GATE:
+            reranker_queue_ms = (time.perf_counter() - reranker_queue_started) * 1000
+            raw_scores = np.asarray(reranker.predict(pairs)).reshape(-1)
         for item, raw_score in zip(candidates, raw_scores):
             # BGE rerankers may expose logits, so normalize them to [0, 1].
             item["score"] = 1.0 / (1.0 + math.exp(-float(raw_score)))
             item["reranked"] = True
         candidates.sort(key=lambda item: item["score"], reverse=True)
+        if strategy.mode == "exact" and top_k > 1:
+            # Preserve the strongest lexical matches, then fill from semantic
+            # reranking. This prevents clauses and measurements from being
+            # displaced entirely by the cross-encoder.
+            by_id = {item["document_index"]: item for item in candidates}
+            reranked_top3 = {item["document_index"] for item in candidates[:3]}
+            top3_overlap = len(set(sparse[:3]) & reranked_top3)
+            # Strong disagreement means semantic reranking is uncertain for an
+            # entity-heavy lookup, so retain four lexical results. Otherwise
+            # two protected results leave more room for semantic recovery.
+            preserve_k = min(4 if top3_overlap <= 1 else 2, top_k)
+            protected = [by_id[item] for item in sparse[:preserve_k] if item in by_id]
+            seen = {item["document_index"] for item in protected}
+            candidates = protected + [
+                item for item in candidates if item["document_index"] not in seen
+            ]
+            exact_preserved = len(protected)
     else:
         for item in candidates:
             item["score"] = item["fusion_score"]
@@ -318,6 +381,8 @@ def hybrid_search(
                 "reranker_requested": rerank_requested,
                 "reranker_available": reranker is not None,
                 "reranked_candidates": len(candidates) if reranker else 0,
+                "exact_sparse_preserved": exact_preserved,
+                "reranker_queue_ms": round(reranker_queue_ms, 2) if reranker else 0.0,
                 "timings_ms": {
                     "index_load": round(load_ms, 2),
                     "dense": round(dense_ms, 2),
@@ -329,4 +394,53 @@ def hybrid_search(
                 },
             }
         )
-    return filtered[:top_k]
+    results = []
+    exact_context_radius = max(0, int(os.getenv("EXACT_CONTEXT_RADIUS", "2")))
+    for item in filtered[:top_k]:
+        result = dict(item)
+        document_index = int(result.pop("document_index"))
+        if strategy.mode == "exact" and exact_context_radius:
+            source = result["source"]
+            expanded_ids = [
+                neighbor
+                for neighbor in range(
+                    max(0, document_index - exact_context_radius),
+                    min(len(store.metadatas), document_index + exact_context_radius + 1),
+                )
+                if (
+                    store.metadatas[neighbor].get("file")
+                    or store.metadatas[neighbor].get("source")
+                    or "鏈煡鏉ユ簮"
+                )
+                == source
+            ]
+            result["content"] = "\n\n".join(
+                store.metadatas[neighbor]["content"] for neighbor in expanded_ids
+            )
+            result["covered_chunk_ids"] = expanded_ids
+            result["metadata"] = {
+                **result["metadata"],
+                "expanded_chunk_ids": expanded_ids,
+                "exact_context_radius": exact_context_radius,
+            }
+        results.append(result)
+    return results
+
+
+def hybrid_search(
+    query: str,
+    knowledge_base: str,
+    top_k: int = 5,
+    score_threshold: float = 0.0,
+    diagnostics: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Bound concurrent model work to keep CPU latency and memory predictable."""
+    queued_at = time.perf_counter()
+    with _RETRIEVAL_GATE:
+        queue_ms = (time.perf_counter() - queued_at) * 1000
+        results = _hybrid_search_impl(
+            query, knowledge_base, top_k, score_threshold, diagnostics
+        )
+    if diagnostics is not None:
+        diagnostics["retrieval_queue_ms"] = round(queue_ms, 2)
+    return results

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "cached_retrieval_p95_ms": 100,
+  "normal_query_p95_ms": 8000,
+  "distinct_query_concurrency5_p95_ms": 8000,
+  "cold_start_p95_ms": 20000,
+  "error_rate": 0.01,
+  "load_profile": {
+    "requests": 20,
+    "concurrency": 5
+  },
+  "note": "Normal-query threshold excludes external LLM generation when measuring the retrieval service directly; end-to-end API budgets must be measured with the deployed provider."
+}

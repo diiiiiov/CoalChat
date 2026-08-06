@@ -1,0 +1,44 @@
+{
+  "safety.md": [
+    {
+      "block_type": "title",
+      "content": "# 瓦斯检查制度",
+      "page": null,
+      "section_title": "瓦斯检查制度",
+      "metadata": {}
+    },
+    {
+      "block_type": "text",
+      "content": "矿井必须建立瓦斯检查制度。",
+      "page": null,
+      "section_title": "瓦斯检查制度",
+      "metadata": {}
+    },
+    {
+      "block_type": "title",
+      "content": "## 超限处置",
+      "page": null,
+      "section_title": "超限处置",
+      "metadata": {}
+    },
+    {
+      "block_type": "text",
+      "content": "瓦斯浓度达到规定限值时，应立即停止作业并撤出人员。",
+      "page": null,
+      "section_title": "超限处置",
+      "metadata": {}
+    }
+  ],
+  "limits.csv": [
+    {
+      "block_type": "table",
+      "content": "| 项目 | 限值 | 措施 |\n| --- | --- | --- |\n| 瓦斯浓度 | 1.0% | 停止作业 |\n| 风速 | 0.25m/s | 检查通风 |",
+      "page": null,
+      "section_title": null,
+      "metadata": {
+        "rows": 3,
+        "columns": 3
+      }
+    }
+  ]
+}

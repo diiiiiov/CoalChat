@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "retrieval_method": "exact_preserving_hybrid",
+  "overall": {
+    "recall@5": 0.85
+  },
+  "slices": {
+    "exact": {"recall@5": 0.90},
+    "relational": {"recall@5": 0.90},
+    "procedural": {"recall@5": 0.90},
+    "summary": {"recall@5": 0.80},
+    "other": {"recall@5": 0.80}
+  },
+  "answer_quality": {
+    "citation_precision": 0.95,
+    "citation_required_violation_rate": 0.0,
+    "invalid_citation_rate": 0.0,
+    "refusal_accuracy": 0.90
+  },
+  "human_review": {
+    "factual_correctness_mean": 4.2,
+    "citation_support_mean": 4.2,
+    "hallucination_rate": 0.0,
+    "unacceptable_safety_risk_count": 0
+  }
+}

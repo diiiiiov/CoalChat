@@ -1,0 +1,64 @@
+{
+  "benchmark": "M3_performance",
+  "environment": {
+    "cpu_logical_cores": 16,
+    "device": "CPU",
+    "reranker_precision": "FP32",
+    "reranker_cpu_threads": 12,
+    "reranker_max_concurrency": 1,
+    "retrieval_max_concurrency": 2
+  },
+  "results": {
+    "cold_same_query_concurrency8": {
+      "requests": 8,
+      "coalesced_requests": 7,
+      "p95_ms": 14793.26,
+      "error_rate": 0.0
+    },
+    "warm_cache_concurrency8": {
+      "requests": 8,
+      "cache_hits": 8,
+      "p95_ms": 23.74,
+      "error_rate": 0.0
+    },
+    "steady_state_exact": {
+      "samples": 5,
+      "p50_ms": 5417.43,
+      "p95_ms": 5542.10,
+      "mean_ms": 5426.57
+    },
+    "distinct_exact_concurrency5": {
+      "requests": 5,
+      "p50_ms": 15669.56,
+      "p95_ms": 24642.95,
+      "throughput_rps": 0.203,
+      "error_rate": 0.0
+    },
+    "alternative_two_rerankers_six_threads": {
+      "p50_ms": 16672.06,
+      "p95_ms": 21944.68,
+      "throughput_rps": 0.228,
+      "adopted": false,
+      "reason": "Small throughput gain but worse single-query latency and still misses the concurrency gate."
+    }
+  },
+  "acceptance": {
+    "status": "needs_hardware_or_scale_out",
+    "passed": [
+      "cold_start_p95_ms",
+      "cached_retrieval_p95_ms",
+      "normal_query_p95_ms",
+      "error_rate"
+    ],
+    "failed": [
+      "distinct_query_concurrency5_p95_ms"
+    ]
+  },
+  "decisions": [
+    "Keep FP32 because INT8 changed Top-5 ordering in the trial.",
+    "Use 12 CPU threads and serialize CrossEncoder inference on this host.",
+    "Coalesce identical in-flight cache misses.",
+    "Preload models before readiness in container deployments.",
+    "Use GPU or multiple API replicas for five concurrent distinct heavy queries."
+  ]
+}

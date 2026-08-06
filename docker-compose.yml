@@ -8,6 +8,10 @@ services:
       EMBED_MODEL_PATH: /app/knowledge_base/samples/vector_store/bge-large-zh
       RERANKER_MODEL_PATH: /app/backen/knowledge/bge-reranker-base
       RERANKER_MAX_LENGTH: 320
+      RERANKER_CPU_THREADS: 12
+      RERANKER_MAX_CONCURRENCY: 1
+      RETRIEVAL_MAX_CONCURRENCY: 2
+      PRELOAD_RETRIEVAL_MODELS: "true"
     ports:
       - "8000:8000"
     volumes:

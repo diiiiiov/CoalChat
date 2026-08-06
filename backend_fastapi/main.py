@@ -31,6 +31,7 @@ from .retrieval import (  # noqa: E402
     clear_index_cache,
     hybrid_search,
     index_version,
+    preload_retrieval_models,
 )
 from .storage import StateStore  # noqa: E402
 from .text_utils import citation_metrics, estimate_tokens, normalize_citations  # noqa: E402
@@ -106,6 +107,8 @@ state_store = StateStore(
     max_memory_items=int(os.getenv("MAX_EVIDENCE_REQUESTS", "500")),
 )
 _rebuild_processes: dict[str, asyncio.subprocess.Process] = {}
+_retrieval_tasks: dict[str, asyncio.Task[dict[str, Any]]] = {}
+_retrieval_tasks_guard = asyncio.Lock()
 _KB_NAME_RE = re.compile(r"^[\w-]+$")
 _ALLOWED_UPLOAD_EXTENSIONS = {".txt", ".md", ".docx", ".pdf", ".pptx", ".csv"}
 _MAX_UPLOAD_BYTES = 200 * 1024 * 1024
@@ -113,6 +116,10 @@ _MAX_UPLOAD_BYTES = 200 * 1024 * 1024
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    if os.getenv("PRELOAD_RETRIEVAL_MODELS", "false").lower() in {"1", "true", "yes", "on"}:
+        knowledge_base = os.getenv("PRELOAD_KNOWLEDGE_BASE", "samples")
+        preload_result = await asyncio.to_thread(preload_retrieval_models, knowledge_base)
+        logger.info("retrieval_preloaded %s", json.dumps(preload_result, ensure_ascii=False))
     yield
     await state_store.close()
 
@@ -563,21 +570,42 @@ async def _retrieve(
         diagnostics = {"cache_format": "legacy"}
     else:
         documents = None
+    coalesced = False
     if documents is None:
-        documents = await asyncio.to_thread(
-            hybrid_search,
-            retrieval_query,
-            request.knowledge_base_name,
-            request.top_k,
-            request.score_threshold,
-            diagnostics,
-        )
-        await state_store.save_retrieval(
-            cache_key, {"documents": documents, "diagnostics": diagnostics}
-        )
+        async def run_retrieval() -> dict[str, Any]:
+            local_diagnostics: dict[str, Any] = {}
+            local_documents = await asyncio.to_thread(
+                hybrid_search,
+                retrieval_query,
+                request.knowledge_base_name,
+                request.top_k,
+                request.score_threshold,
+                local_diagnostics,
+            )
+            payload = {"documents": local_documents, "diagnostics": local_diagnostics}
+            await state_store.save_retrieval(cache_key, payload)
+            return payload
+
+        async with _retrieval_tasks_guard:
+            task = _retrieval_tasks.get(cache_key)
+            if task is None:
+                task = asyncio.create_task(run_retrieval())
+                _retrieval_tasks[cache_key] = task
+            else:
+                coalesced = True
+        try:
+            payload = await asyncio.shield(task)
+            documents = payload["documents"]
+            diagnostics = dict(payload["diagnostics"])
+        finally:
+            if task.done():
+                async with _retrieval_tasks_guard:
+                    if _retrieval_tasks.get(cache_key) is task:
+                        _retrieval_tasks.pop(cache_key, None)
     diagnostics = {
         **diagnostics,
         "cache_hit": cache_hit,
+        "request_coalesced": coalesced,
         "request_retrieval_ms": round(
             (time.perf_counter() - retrieve_started) * 1000, 2
         ),
@@ -713,6 +741,16 @@ async def health() -> dict[str, Any]:
         "retrieval_pipeline": RETRIEVAL_PIPELINE_VERSION,
         "legacy_env_layout": LEGACY_ENV_LAYOUT,
         "state_backend": await state_store.backend(),
+        "performance": {
+            "retrieval_max_concurrency": int(os.getenv("RETRIEVAL_MAX_CONCURRENCY", "2")),
+            "reranker_max_concurrency": int(os.getenv("RERANKER_MAX_CONCURRENCY", "1")),
+            "reranker_cpu_threads": int(
+                os.getenv("RERANKER_CPU_THREADS", str(min(os.cpu_count() or 1, 12)))
+            ),
+            "preload_retrieval_models": os.getenv(
+                "PRELOAD_RETRIEVAL_MODELS", "false"
+            ).lower() in {"1", "true", "yes", "on"},
+        },
     }
 
 

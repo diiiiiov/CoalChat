@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "dataset": "coal_mine_qa_300.jsonl",
+  "samples": 300,
+  "sha256": "4d4a759b63243fa13275415e67bb6aa721ffb91c5e439275450368ffc0eb4281",
+  "required_fields": [
+    "id",
+    "question",
+    "target_chunk_id",
+    "relevant_chunk_ids",
+    "relevant_sources",
+    "source",
+    "snippet_sha256"
+  ],
+  "purpose": "Frozen M1 retrieval regression dataset. Update this manifest only after an intentional dataset review."
+}

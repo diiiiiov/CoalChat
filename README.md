@@ -188,7 +188,7 @@ Invoke-RestMethod `
 
 1. 根据对话历史判断是否需要将当前问题改写为独立问题。
 2. 分析问题类型：
-   - `exact`：条款、编号、百分比、尺寸等强精确特征，优先 BM25，不调用重排；
+   - `exact`：条款、编号、百分比、尺寸及“多少/限值/厚度”等精确查询，等权融合 Dense 与 BM25，重排 20 个候选；根据两路一致性保护 2 或 4 个 BM25 结果，并补充同源 ±2 片段上下文；
    - `semantic`：一般语义问题，保留稠密召回并适当偏向当前基准表现更好的稀疏召回；
    - `relational`：原因、影响、关系、流程类问题，提高稠密召回权重；
    - `summary`：总结和概述类问题，扩大语义召回作用。
@@ -273,8 +273,15 @@ Invoke-RestMethod `
 | `QUERY_REWRITE_ENABLED` | `true` | 是否启用多轮查询改写 |
 | `RERANKER_POLICY` | `auto` | `auto`、`always` 或 `never` |
 | `RERANKER_CANDIDATE_K` | `10` | 送入重排器的候选数 |
+| `EXACT_RERANKER_CANDIDATE_K` | `20` | exact 查询送入重排器的候选数；用于保护数值、条款和实体查询召回率 |
+| `EXACT_CONTEXT_RADIUS` | `2` | exact 命中片段向前、向后补充的同源片段数量，用于缓解切片边界丢失 |
 | `RERANKER_SKIP_TOP3_OVERLAP` | `2` | 两路 Top 3 达到此重合数时跳过自动重排 |
 | `RERANKER_MAX_LENGTH` | `320` | CrossEncoder 最大输入长度 |
+| `RERANKER_CPU_THREADS` | 自动，最多 `12` | CPU 重排线程数；当前 16 逻辑核测试机上 12 线程延迟最低 |
+| `RERANKER_MAX_CONCURRENCY` | `1` | 同时执行的 CrossEncoder 推理数，避免 CPU 线程争抢 |
+| `RETRIEVAL_MAX_CONCURRENCY` | `2` | 单进程同时执行的本地检索数；其余请求排队并记录等待时间 |
+| `PRELOAD_RETRIEVAL_MODELS` | `false` | 启动阶段预加载索引和重排模型；容器部署默认开启，避免首个用户承担冷启动 |
+| `PRELOAD_KNOWLEDGE_BASE` | `samples` | 启动预热的知识库名称 |
 | `RRF_K` | `60` | RRF 平滑参数 |
 
 ### OCR 与视觉描述
@@ -299,13 +306,24 @@ Invoke-RestMethod `
 
 ```powershell
 npm run test:backend
+npm run test:dataset
+npm run eval:m2
 npm run build
 npm run eval:retrieval
 npm run eval:compare
 npm run audit:index
 ```
 
-- 后端单元测试覆盖引用清洗、模型协议、文本切分、查询改写、动态路由、重排策略和内存存储；
+- 后端测试覆盖引用清洗、模型协议、文本切分、查询改写、动态路由、重排策略、内存存储和文档注册版本；
+- FastAPI 契约测试覆盖请求校验、OpenAPI 路径、普通问答、无证据拒答、SSE 事件顺序和证据过期；
+- Markdown/CSV 解析结果通过 `tests/fixtures/golden/document_blocks.json` 做 Golden 回归；
+- `evaluation/dataset_manifest.json` 固定 300 条评测集的数量、字段与 SHA256，数据有意更新后必须同步审核清单；
+- GitHub Actions 会并行执行后端测试、评测集校验和前端生产构建；
+- `npm run eval:m2` 按 exact、relational、procedural、summary、other 分层输出检索指标；
+- `evaluation/evaluate_answers.py` 读取回答 JSONL，统计引用准确率、引用覆盖率、非法引用率和拒答率；
+- `evaluation/human_eval_template.md` 提供煤矿安全领域专家盲评表和建议上线门槛；
+- `evaluation/m2_acceptance.json` 固定分层检索、回答质量和人工评审门槛；M2 报告会明确列出未达标项；
+- `npm run perf:m3` 使用固定并发配置输出 p50/p95/p99、吞吐和错误率；M3 门槛见 `evaluation/m3_acceptance.json`；
 - `tests/mock_llm.py` 与 `tests/smoke_test.py` 用于验证普通问答、SSE、引用规范化和证据回查；
 - `tests/real_api_smoke.py` 用于真实模型 API 冒烟测试；
 - `tests/redis_persistence_test.py write/read` 可跨进程验证 Redis 证据持久化；

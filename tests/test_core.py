@@ -1,12 +1,15 @@
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
+
+import numpy as np
 
 from backend_fastapi.model_client import ModelClient, ModelClientConfig
 from backend_fastapi.index_tools import split_text
 from backend_fastapi.storage import StateStore
 from backend_fastapi.text_utils import normalize_citations
 from backend_fastapi.query_context import compact_history, should_rewrite
-from backend_fastapi.retrieval import analyze_query, should_use_reranker
+from backend_fastapi.retrieval import analyze_query, hybrid_search, should_use_reranker
 
 
 class CitationTests(unittest.TestCase):
@@ -81,11 +84,16 @@ class QueryContextTests(unittest.TestCase):
 
 
 class RetrievalRoutingTests(unittest.TestCase):
-    def test_exact_numeric_query_uses_sparse_without_reranker(self):
+    def test_exact_numeric_query_preserves_sparse_and_uses_reranker(self):
         strategy = analyze_query("瓦斯浓度达到1.5%时如何处理")
         self.assertEqual(strategy.mode, "exact")
-        self.assertEqual(strategy.dense_weight, 0.0)
-        self.assertFalse(should_use_reranker(strategy))
+        self.assertEqual(strategy.dense_weight, strategy.sparse_weight)
+        self.assertTrue(should_use_reranker(strategy))
+
+    def test_exact_lookup_without_literal_number_uses_exact_route(self):
+        strategy = analyze_query("葛泉矿东井的核定生产能力是多少万吨每年")
+        self.assertEqual(strategy.mode, "exact")
+        self.assertTrue(should_use_reranker(strategy))
 
     def test_relational_query_keeps_dense_and_reranker(self):
         strategy = analyze_query("瓦斯积聚为什么会导致爆炸")
@@ -106,6 +114,43 @@ class RetrievalRoutingTests(unittest.TestCase):
         self.assertTrue(
             should_use_reranker(strategy, dense=[1, 2, 3], sparse=[8, 9, 10])
         )
+
+    def test_exact_reranking_preserves_top_sparse_candidates(self):
+        class Embedder:
+            def encode(self, values, normalize_embeddings=True):
+                return np.zeros((1, 2), dtype="float32")
+
+        class Index:
+            def search(self, vector, limit):
+                return np.zeros((1, 6)), np.asarray([[2, 3, 4, 5, 0, 1]])
+
+        class BM25:
+            def get_scores(self, tokens):
+                return np.asarray([6, 5, 4, 3, 2, 1], dtype=float)
+
+        class Reranker:
+            def predict(self, pairs):
+                return np.asarray([int(content[-1]) for _, content in pairs], dtype=float)
+
+        store = SimpleNamespace(
+            metadatas=[
+                {"content": f"doc{i}", "source": "rules.txt", "chunk_id": i}
+                for i in range(6)
+            ],
+            embedder=Embedder(),
+            index=Index(),
+            bm25=BM25(),
+        )
+        diagnostics = {}
+        with patch("backend_fastapi.retrieval.load_index", return_value=store), patch(
+            "backend_fastapi.retrieval.load_reranker", return_value=Reranker()
+        ):
+            results = hybrid_search("生产能力是多少", "test", top_k=5, diagnostics=diagnostics)
+
+        self.assertEqual([item["chunk_id"] for item in results[:4]], [0, 1, 2, 3])
+        self.assertEqual(diagnostics["exact_sparse_preserved"], 4)
+        self.assertEqual(results[0]["covered_chunk_ids"], [0, 1, 2])
+        self.assertIn("doc2", results[0]["content"])
 
 
 if __name__ == "__main__":

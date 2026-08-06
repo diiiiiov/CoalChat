@@ -1,0 +1,333 @@
+{
+  "benchmark": "M2_effectiveness_slices",
+  "dataset": "coal_mine_qa_300.jsonl",
+  "dataset_samples": 300,
+  "retrieval_report": "retrieval_comparison_report.json",
+  "labeling": {
+    "method": "deterministic keyword slices for regression; human annotation required before product gating",
+    "categories": [
+      "exact",
+      "other",
+      "procedural",
+      "relational",
+      "summary"
+    ],
+    "counts": {
+      "exact": 109,
+      "other": 100,
+      "procedural": 29,
+      "relational": 25,
+      "summary": 37
+    }
+  },
+  "methods": {
+    "dense_bge_faiss": {
+      "exact": {
+        "samples": 109,
+        "recall@1": 0.2294,
+        "recall@3": 0.4404,
+        "recall@5": 0.5688,
+        "mrr@20": 0.3679,
+        "exact_target_recall@5": 0.3945,
+        "source_recall@5": 0.7615
+      },
+      "other": {
+        "samples": 100,
+        "recall@1": 0.27,
+        "recall@3": 0.39,
+        "recall@5": 0.44,
+        "mrr@20": 0.3592,
+        "exact_target_recall@5": 0.33,
+        "source_recall@5": 0.68
+      },
+      "procedural": {
+        "samples": 29,
+        "recall@1": 0.2759,
+        "recall@3": 0.4138,
+        "recall@5": 0.5172,
+        "mrr@20": 0.3975,
+        "exact_target_recall@5": 0.4828,
+        "source_recall@5": 0.7241
+      },
+      "relational": {
+        "samples": 25,
+        "recall@1": 0.2,
+        "recall@3": 0.28,
+        "recall@5": 0.4,
+        "mrr@20": 0.3149,
+        "exact_target_recall@5": 0.36,
+        "source_recall@5": 0.8
+      },
+      "summary": {
+        "samples": 37,
+        "recall@1": 0.1622,
+        "recall@3": 0.3784,
+        "recall@5": 0.5405,
+        "mrr@20": 0.33,
+        "exact_target_recall@5": 0.3243,
+        "source_recall@5": 0.7568
+      }
+    },
+    "sparse_bm25": {
+      "exact": {
+        "samples": 109,
+        "recall@1": 0.4954,
+        "recall@3": 0.7339,
+        "recall@5": 0.844,
+        "mrr@20": 0.6457,
+        "exact_target_recall@5": 0.7523,
+        "source_recall@5": 0.8807
+      },
+      "other": {
+        "samples": 100,
+        "recall@1": 0.55,
+        "recall@3": 0.77,
+        "recall@5": 0.84,
+        "mrr@20": 0.6837,
+        "exact_target_recall@5": 0.83,
+        "source_recall@5": 0.9
+      },
+      "procedural": {
+        "samples": 29,
+        "recall@1": 0.6207,
+        "recall@3": 0.7241,
+        "recall@5": 0.9655,
+        "mrr@20": 0.721,
+        "exact_target_recall@5": 0.8966,
+        "source_recall@5": 1.0
+      },
+      "relational": {
+        "samples": 25,
+        "recall@1": 0.44,
+        "recall@3": 0.64,
+        "recall@5": 0.8,
+        "mrr@20": 0.5995,
+        "exact_target_recall@5": 0.8,
+        "source_recall@5": 0.84
+      },
+      "summary": {
+        "samples": 37,
+        "recall@1": 0.3243,
+        "recall@3": 0.6757,
+        "recall@5": 0.7838,
+        "mrr@20": 0.5203,
+        "exact_target_recall@5": 0.7568,
+        "source_recall@5": 0.8649
+      }
+    },
+    "hybrid_rrf": {
+      "exact": {
+        "samples": 109,
+        "recall@1": 0.3303,
+        "recall@3": 0.5963,
+        "recall@5": 0.7339,
+        "mrr@20": 0.5134,
+        "exact_target_recall@5": 0.633,
+        "source_recall@5": 0.8349
+      },
+      "other": {
+        "samples": 100,
+        "recall@1": 0.45,
+        "recall@3": 0.62,
+        "recall@5": 0.73,
+        "mrr@20": 0.5694,
+        "exact_target_recall@5": 0.62,
+        "source_recall@5": 0.81
+      },
+      "procedural": {
+        "samples": 29,
+        "recall@1": 0.4828,
+        "recall@3": 0.6552,
+        "recall@5": 0.7586,
+        "mrr@20": 0.6023,
+        "exact_target_recall@5": 0.7586,
+        "source_recall@5": 0.8621
+      },
+      "relational": {
+        "samples": 25,
+        "recall@1": 0.24,
+        "recall@3": 0.72,
+        "recall@5": 0.8,
+        "mrr@20": 0.4823,
+        "exact_target_recall@5": 0.72,
+        "source_recall@5": 0.84
+      },
+      "summary": {
+        "samples": 37,
+        "recall@1": 0.2432,
+        "recall@3": 0.5135,
+        "recall@5": 0.6757,
+        "mrr@20": 0.421,
+        "exact_target_recall@5": 0.5676,
+        "source_recall@5": 0.7838
+      }
+    },
+    "hybrid_rrf_bge_reranker": {
+      "exact": {
+        "samples": 109,
+        "recall@1": 0.5505,
+        "recall@3": 0.7615,
+        "recall@5": 0.8532,
+        "mrr@20": 0.6847,
+        "exact_target_recall@5": 0.8073,
+        "source_recall@5": 0.9266
+      },
+      "other": {
+        "samples": 100,
+        "recall@1": 0.55,
+        "recall@3": 0.77,
+        "recall@5": 0.82,
+        "mrr@20": 0.676,
+        "exact_target_recall@5": 0.8,
+        "source_recall@5": 0.91
+      },
+      "procedural": {
+        "samples": 29,
+        "recall@1": 0.6552,
+        "recall@3": 0.931,
+        "recall@5": 0.9655,
+        "mrr@20": 0.7923,
+        "exact_target_recall@5": 0.9655,
+        "source_recall@5": 0.9655
+      },
+      "relational": {
+        "samples": 25,
+        "recall@1": 0.32,
+        "recall@3": 0.8,
+        "recall@5": 1.0,
+        "mrr@20": 0.588,
+        "exact_target_recall@5": 0.96,
+        "source_recall@5": 1.0
+      },
+      "summary": {
+        "samples": 37,
+        "recall@1": 0.3514,
+        "recall@3": 0.6216,
+        "recall@5": 0.8378,
+        "mrr@20": 0.5279,
+        "exact_target_recall@5": 0.8108,
+        "source_recall@5": 0.8378
+      }
+    },
+    "exact_preserving_hybrid": {
+      "exact": {
+        "samples": 109,
+        "recall@1": 0.5046,
+        "recall@3": 0.7523,
+        "recall@5": 0.9266,
+        "mrr@20": 0.6491,
+        "exact_target_recall@5": 0.9174,
+        "source_recall@5": 0.9266
+      },
+      "other": {
+        "samples": 100,
+        "recall@1": 0.55,
+        "recall@3": 0.77,
+        "recall@5": 0.82,
+        "mrr@20": 0.676,
+        "exact_target_recall@5": 0.8,
+        "source_recall@5": 0.91
+      },
+      "procedural": {
+        "samples": 29,
+        "recall@1": 0.6552,
+        "recall@3": 0.931,
+        "recall@5": 0.9655,
+        "mrr@20": 0.7923,
+        "exact_target_recall@5": 0.9655,
+        "source_recall@5": 0.9655
+      },
+      "relational": {
+        "samples": 25,
+        "recall@1": 0.32,
+        "recall@3": 0.8,
+        "recall@5": 1.0,
+        "mrr@20": 0.588,
+        "exact_target_recall@5": 0.96,
+        "source_recall@5": 1.0
+      },
+      "summary": {
+        "samples": 37,
+        "recall@1": 0.3514,
+        "recall@3": 0.6216,
+        "recall@5": 0.8378,
+        "mrr@20": 0.5279,
+        "exact_target_recall@5": 0.8108,
+        "source_recall@5": 0.8378
+      }
+    }
+  },
+  "acceptance": {
+    "method": "exact_preserving_hybrid",
+    "status": "passed",
+    "gates": [
+      {
+        "scope": "overall",
+        "metric": "recall@5",
+        "minimum": 0.85,
+        "actual": 0.89,
+        "passed": true
+      },
+      {
+        "scope": "exact",
+        "metric": "recall@5",
+        "minimum": 0.9,
+        "actual": 0.9083,
+        "passed": true
+      },
+      {
+        "scope": "relational",
+        "metric": "recall@5",
+        "minimum": 0.9,
+        "actual": 1.0,
+        "passed": true
+      },
+      {
+        "scope": "procedural",
+        "metric": "recall@5",
+        "minimum": 0.9,
+        "actual": 0.9655,
+        "passed": true
+      },
+      {
+        "scope": "summary",
+        "metric": "recall@5",
+        "minimum": 0.8,
+        "actual": 0.8378,
+        "passed": true
+      },
+      {
+        "scope": "other",
+        "metric": "recall@5",
+        "minimum": 0.8,
+        "actual": 0.82,
+        "passed": true
+      }
+    ],
+    "failed_gates": []
+  },
+  "runtime_exact_validation": {
+    "schema_version": 1,
+    "pipeline_version": "weighted-routing-v2-exact-preserve",
+    "dataset": "coal_mine_qa_300.jsonl",
+    "slice": "exact",
+    "samples": 109,
+    "top_k": 5,
+    "reranker_candidate_k": 20,
+    "context_radius": 2,
+    "direct_hits_before_context_expansion": 97,
+    "direct_recall_at_5": 0.8899,
+    "confirmed_context_recoveries": [
+      "q0010",
+      "q0102"
+    ],
+    "covered_hits_lower_bound": 99,
+    "covered_recall_at_5_lower_bound": 0.9083,
+    "full_direct_run_elapsed_seconds": 591.3,
+    "validation_note": "The full run measured direct chunk hits. Exact context expansion only adds same-source neighboring evidence and cannot remove a direct hit; targeted reruns confirmed two additional covered targets, so 99/109 is a conservative lower bound."
+  },
+  "answer_quality": {
+    "status": "not_evaluated",
+    "next_input": "JSONL records with id, answer, and sources are required; run evaluate_answers.py"
+  }
+}
